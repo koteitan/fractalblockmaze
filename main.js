@@ -18,8 +18,11 @@ window.onload = function(){
   window.onresize(); //after loading maps
   setInterval(procAll, 1000/frameRate); //enter gameloop
 }
-var onchangetextbox = function(){
+var onchangedepth = function(){
   depth = form0.depth.value;
+  isRequestedDraw = true;
+}
+var onchangeunit = function(){
   initMap(form0.unit.value);
   isRequestedDraw = true;
 }
@@ -137,8 +140,8 @@ var handleMouseDown = function(){
 }
 var handleMouseDragging = function(){
   var childlen = maplen/unit;
-  var mx = Math.floor((mouseDownPos[0]-margin)/childlen);
-  var my = Math.floor((mouseDownPos[1]-margin)/childlen);
+  var mx = Math.floor((mousePos[0]-margin)/childlen);
+  var my = Math.floor((mousePos[1]-margin)/childlen);
 
   if(mx>=unit||my>=unit) return;
   if(lastpos[0]==mx && lastpos[1]==my) return;
