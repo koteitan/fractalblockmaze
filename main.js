@@ -29,6 +29,7 @@ var onchangeunit = function(){
 //maps-------------------
 var unit;
 var depth;
+var direction; // 0=horizontal
 var map=[
 ];
 var initMap=function(_unit){
@@ -58,7 +59,12 @@ window.onresize = function(){ //browser resize
   var wy= [(document.documentElement.clientHeight-300), 20].max();
   document.getElementById("outcanvas").width = wx;
   document.getElementById("outcanvas").height= wy;
-  maplen = Math.floor([(can.width-margin*4)/2, can.height-margin*2].min());
+  direction = wy>=wx;
+  if(direction){
+    maplen = Math.floor([(can.width-margin*2)/1, (can.height-margin*4)/2].min());
+  }else{
+    maplen = Math.floor([(can.width-margin*4)/2, (can.height-margin*2)/1].min());
+  }
   isRequestedDraw = true;
 };
 // graphics ------------------------
@@ -91,18 +97,22 @@ var procDraw = function(){
     for(var y=0;y<unit;y++){
       if(map[y][x]){
         ctx.fillStyle  ="black";
-        ctx.fillRect(margin+x*childlen, margin+y*childlen, childlen, childlen);
+        ctx.fillRect  (margin+x*childlen, margin+y*childlen, childlen, childlen);
         ctx.strokeRect(margin+x*childlen, margin+y*childlen, childlen, childlen);
       }else{
         ctx.fillStyle  ="white";
-        ctx.fillRect(margin+x*childlen, margin+y*childlen, childlen, childlen);
+        ctx.fillRect  (margin+x*childlen, margin+y*childlen, childlen, childlen);
         ctx.strokeRect(margin+x*childlen, margin+y*childlen, childlen, childlen);
       }
     }
   }
   
   //draw fractal
-  drawUnit(0,margin+maplen+margin+margin, margin, maplen);
+  if(direction){
+    drawUnit(0,margin, margin+maplen+margin+margin, maplen);
+  }else{
+    drawUnit(0,margin+maplen+margin+margin, margin, maplen);
+  }
 
 }
 var drawUnit = function(d, x0, y0, len){

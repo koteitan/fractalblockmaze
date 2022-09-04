@@ -1,4 +1,4 @@
-document.getElementById("versiondisplay").innerHTML = "1.0";
+document.getElementById("versiondisplay").innerHTML = "1.1";
 document.getElementById("changelog").innerHTML = 
 "<table align='right'><tr>"+
 "<td style='text-align:right'></td><td>&nbsp;</td><td></td></tr>"+
