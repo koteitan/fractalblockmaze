@@ -4,7 +4,8 @@ window.onload = function(){
   drawdepth   = 3;
   solverdepth = 3;
   form0.unit.value  = unit;
-  form0.depth.value = drawdepth;
+  form0.drawdepth.value = drawdepth;
+  form0.solverdepth.value = solverdepth;
   map=[
     [1,0,1,1],
     [0,1,0,1],
