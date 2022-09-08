@@ -1,59 +1,97 @@
-var World = function(unit, map, userdepth){
-  this.unit = unit;
-  this.userdepth =  userdepth;
-  this.map = map.clone();
+var World = function(unit, map){
+  this.unit  = unit;
+  this.map   = map.clone();
 }
 var Node=function(pos, parent){
   this.pos    = pos.clone();
   this.parent = parent;
   this.cost   = 0;
 }
+Node.prototype.toString=function(){
+  return "<"+this.pos.toString()+","+this.cost+">";
+}
 var List=function(body, cost, next){
   this.body  = body;
   this.score = cost;
   this.next  = null;
 }
-var Solver = function(world){
+var Solver = function(world, depth){
+  this.depth = depth;
   this.world = world;
-  this.alllist  = new Array(0);
-  this.openlist = new function();
+  this.alllist  = [];
+  this.openlist = function(){};
   this.openlist.top   = null;
-  this.openlist.items = null;
   //initialize openlist
   var unit=world.unit;
   var map=world.map;
   var y=unit-1;
   for(var x=0;x<unit;x++){
-    if(map[y][x]){
-      var node = new Node([y,x], null);
-      node.cost = 1/unit;
+    if(!map[y][x]){
+      var node = new Node([[x,y]], null);
+      node.cost = this.evalcost(0, node);
       this.addopenlist(node, node.cost);
     }
   }
 }
-var Solver.prototype.addopenlist=function(body, cost){
-  if(this.openlist.items==0){
-    var item = new List(body, cost, null);
-    this.openlist.items++;
+Solver.prototype.addopenlist=function(body){
+  console.log("addopenlist:"+body.pos.toString());
+  //check alllist
+  if(this.ismemberalllist(body)){ //is member of alllist
+    console.log("alllist=["+this.printalllist()+"] -> rejected.");
+    return; // nop and return
+  }
+  //add into alllist
+  this.addalllist(body);
+  console.log("alllist=["+this.printalllist()+"] -> accepted.");
+  console.log("openlist=["+this.printopenlist()+"].");
+  
+  if(this.openlist.top==null){ // first add
+    var item = new List(body, 1, null);
     this.openlist.top = item;
-  }else{
+  }else{ // after second
+    var cost=body.cost;
     var parent = null;
+    var isadded = false;
     for(var i=this.openlist.top;i!=null;i=i.next){
       if(i.cost < cost){
         if(parent!=null){
           var item = new List(body, cost, parent.next);
           parent.next = item;
-          this.openlist.items++;
         }else{//i==top
           var item = new List(body, cost, parent.next);
           this.openlist.top = item;
-          this.openlist.items++;
         }
       }
       parent = i;
     }//for i
+    if(!isadded){// highest cost
+      var item = new List(body, cost, parent.next);
+      parent.next = item;
+    }
   }
 }
+Solver.prototype.delopenlist = function(node){
+  var parent = null;
+  if(this.openlist.top==null) return;
+  for(var i=this.openlist.top;i!=null;i=i.next){
+    if(i.body==node){
+      if(parent==null){
+        this.openlist.top = i.next;
+      }else{
+        parent.next = i.next;
+      }
+      return;
+    }
+    parent = i;
+  }
+}
+Solver.prototype.printopenlist = function(){
+  if(this.openlist.top==null) return;
+  for(var i=this.openlist.top;i!=null;i=i.next){
+    console.log("pos="+i.body.pos.toString()+", cost="+i.body.cost);
+  }
+}
+
 var movelist=[//movelist[dim][amount]
   [0,-1],//-x
   [0,+1],//+x
@@ -64,26 +102,28 @@ var movelist=[//movelist[dim][amount]
 /* ret=searchnext()
  * ret = judge ={0:unknown yet, 1:found, 2:unsolved}
  * */
-var solver.prototype.searchnext=function(){
+Solver.prototype.searchnext=function(){
   var goalnode = null;
-  if(tihs.openlist.top==null) return 2; //unsolved
+  if(this.openlist.top==null) return 2; //unsolved
   var world = this.world;
+  var map   = world.map;
   var unit  = world.unit;
 
-  var parent = this.openlist.top.body;
+  var parent = this.openlist.top.body; //parent = lowest cost
   var pos   = parent.pos;
-  var depth = pos.length-1;
-  var p1;
+  var depth = pos.length;
+  var pos1;
   var isgoal = false;
   for(dir=0;dir<4;dir++){
-    p1 = pos.clone();
+    var movdim=movelist[dir][0];
+    var movamt=movelist[dir][1];
+    pos1 = pos.clone();
     //increment
     var over=true;
-    for(d=depth;d>=0;d--){
-      var mdim=movelist[dir][0];
-      p1[d][mdim]+=movelist[dim][1];
-      if(p1[d][mdim]<0 || p1[d][mdim]>=unit){// outside
-        p1[d][mdim]=(p1[d][mdim]+unit)%unit;
+    for(d=depth-1;d>=0;d--){
+      pos1[d][movdim]+=movamt;
+      if(pos1[d][movdim]<0 || pos1[d][movdim]>=unit){// outside
+        pos1[d][movdim]=(pos1[d][movdim]+unit)%unit;
       }else{
         over=false;
         break;//rewind is not needed
@@ -91,42 +131,94 @@ var solver.prototype.searchnext=function(){
       //try next depth
     }
     if(!over){//not over
-      //make pos the largest
-      for(d=0;d<depth;d++){
-        if(!world.map[p1[d][1]][p1[d][0]]){//empty in depth d
-          p1.splice(d+1);//delete over depth d
+      console.log("try pos1 "+pos1.toString());
+      //judge pos1 is empty
+      var isempty=false;
+      for(d=0;d<pos1.length;d++){
+        if(map[pos1[d][1]][pos1[d][0]]==0){//empty in depth d
+          isempty=true;
+          pos1.splice(d+1);//delete over depth d
         }
       }
-      int cost = this.evalcost(node.cost, node1);
-      var node1 = new Node(p1, p);
-      this.addopenlist(node1, cost);
-    }else{
-      if(p1[0][1]<0){ // found goal
+      if(isempty){// pos1 is empty
+        console.log("pos1 is empty.");
+      //add it as it is
+        var node1 = new Node(pos1, parent);
+        node1.cost = this.evalcost(parent.cost, node1);
+        this.addopenlist(node1);
+      }else{// pos1 is not empty
+        console.log("pos1 is not empty.");
+        if(depth < this.depth){
+          //search deeper nodes
+          if(movdim==0){//x
+            for(var y=0;y<unit;y++){
+              var x=(movamt==-1)?unit-1:0;
+              if(!map[y][x]){
+                var pos2 = pos1.clone();
+                pos2.push([x,y]);
+                var node2 = new Node(pos2, parent);
+                node2.cost = this.evalcost(parent.cost, node2);
+                this.addopenlist(node2);
+              }
+            }//for y
+          }else{//y
+            for(var x=0;x<unit;x++){
+              var y=(movamt==-1)?unit-1:0;
+              if(!map[y][x]){
+                var pos2 = pos1.clone();
+                pos2.push([x,y]);
+                var node2 = new Node(pos2, parent);
+                node2.code = this.evalcost(parent.cost, node2);
+                this.addopenlist(node2);
+              }
+            }//for x
+          }//if movdim==0
+        }// depth
+      }//! else isempty
+    }else{//over
+      if(pos1[0][1]<0){ // found goal
         ret = 1;
-        goalnode = node;
         return 1; // return solved
       }
     }//if over
   }//for dir
+
+  // remove parent from openlist
+  this.delopenlist(parent);
+  
   return 0; //return unknown
 }
-Solver.prototype.evalcost = function(parent, node){
+Solver.prototype.evalcost = function(parent_cost, node){
   var pos   = node.pos;
   var depth = pos.length;
   var unit = this.world.unit;
 
   var cind = 1/4;
-  var cost;
-  if(parent==null){
-    cost = 0;
-  }else{
-    cost = parent.cost;
-  }
+  var cost = 0;
   for(var d=0;d<depth;d++){
     cost += pos[d][1]*cind;
     cind /= unit;
   }
   return cost;
 }
-
-
+Solver.prototype.addalllist = function(node){
+  this.alllist.push(node);
+}
+Solver.prototype.ismemberalllist = function(node){
+  var len=this.alllist.length;
+  var alllist=this.alllist;
+  for(var i=0;i<len;i++){
+    if(alllist[i].pos.isEqual(node.pos)) return true;
+  }
+  return false;
+}
+Solver.prototype.printalllist=function(){
+  var str="";
+  for(var i=0;i<this.alllist.length;i++) str += this.alllist[i].toString(); 
+  return str;
+}
+Solver.prototype.printopenlist=function(){
+  var str="";
+  for(var i=this.openlist.top;i!=null;i=i.next) str += i.body.toString(); 
+  return str;
+}

@@ -1,34 +1,45 @@
-// fields--------------------
-// maps
-var spreadsheetId = "11WH6PrhFAcdMEWSTjxSjZ7_rWHg-b8shAvSFn99bdyQ"; // for live
-//var spreadsheetId = "1foxx3dOYDwnyqQsxmhmcWV93xvCzOxX73GCg8Bv-kg0";
-var gW; /* world coordinate */
 //entry point--------------------
 window.onload = function(){
-  unit=4;
-  depth=3;
+  unit        = 4;
+  drawdepth   = 3;
+  solverdepth = 1;
+  form0.unit.value  = unit;
+  form0.depth.value = drawdepth;
   map=[
     [1,0,1,1],
     [0,1,0,1],
     [1,0,1,1],
     [1,1,0,0]
   ];
+  map=[
+    [1,0,1,1],
+    [0,0,0,1],
+    [1,0,1,1],
+    [1,0,0,0]
+  ];
+  initSolver(0);
   initDraw();
   initEvent(can);
-  window.onresize(); //after loading maps
+  window.onresize();
   setInterval(procAll, 1000/frameRate); //enter gameloop
 }
-var onchangedepth = function(){
-  depth = form0.depth.value;
-  isRequestedDraw = true;
+var onchangesolverdepth = function(){
+  solverdepth = form0.solverdepth.value;
+  initSolver(0);
+  reqdraw = true;
+}
+var onchangedrawdepth = function(){
+  drawdepth = form0.drawdepth.value;
+  reqdraw = true;
 }
 var onchangeunit = function(){
   initMap(form0.unit.value);
-  isRequestedDraw = true;
+  reqdraw = true;
 }
 //maps-------------------
 var unit;
-var depth;
+var drawdepth;
+var solverdepth;
 var direction; // 0=horizontal
 var map=[
 ];
@@ -42,12 +53,55 @@ var initMap=function(_unit){
     }
   }
 }
+//solver -----------------
+var solver;
+var world;
+var trials = 100;
+var solverstatus = 0; /* 0:unknown, 1:solved, 2:unsolved-end */
+var reqinitsolver = 0;
+var initSolver = function(depth){
+  world  = new World(unit, map);
+  solver = new Solver(world, depth);
+  console.log("Solver(,"+depth+")-------!!");
+  solverstatus = 0;
+}
+var procSolver = function(){
+  if(reqinitsolver){
+    initSolver(1);
+    reqinitsolver = 0;
+    return;
+  }
+
+  switch(solverstatus){
+    case 0:
+      for(var i=0;i<trials;i++){
+        var result = solver.searchnext();
+        if(result!=0)break;
+      }
+      if(result==2){// unsolved
+        reqdraw = true;
+        if(solver.depth < solverdepth){
+          var newdepth = solver.depth+1;
+          initSolver(newdepth);
+        }else{
+          solverstatus = 2; // finally unsolved
+        }
+      }else if(result==1){// solved
+        reqdraw = true;
+        solverstatus = 1;
+      }
+      break;
+    default:
+      break;
+  }//switch status
+}
 //game loop ------------------
 var procAll=function(){
   procEvent();
-  if(isRequestedDraw){
+  procSolver();
+  if(reqdraw){
     procDraw();
-    isRequestedDraw = false;
+    reqdraw = false;
   }
 }
 // html ----------------------------
@@ -65,14 +119,14 @@ window.onresize = function(){ //browser resize
   }else{
     maplen = Math.floor([(can.width-margin*4)/2, (can.height-margin*2)/1].min());
   }
-  isRequestedDraw = true;
+  reqdraw = true;
 };
 // graphics ------------------------
 var ctx;
 var can;
 var margin = 10;
 var maplen;
-var isRequestedDraw = true;
+var reqdraw = true;
 var frameRate = 30; //[fps]
 //init
 var initDraw=function(){
@@ -107,13 +161,55 @@ var procDraw = function(){
     }
   }
   
-  //draw fractal
+  var x;
+  var y;
   if(direction){
-    drawUnit(0,margin, margin+maplen+margin+margin, maplen);
+    x=margin;
+    y=margin+maplen+margin+margin;
   }else{
-    drawUnit(0,margin+maplen+margin+margin, margin, maplen);
+    x=margin+maplen+margin+margin;
+    y=margin;
   }
-
+  //draw fractal
+  drawUnit(0, x, y, maplen);
+  
+  //draw openlist
+  console.log("draw openlist:"+solver.printopenlist());
+  for(var i=solver.openlist.top;i!=null;i=i.next){
+    var x1=x;
+    var y1=y;
+    var len=maplen;
+    var pos=i.body.pos;
+    var depth=pos.length;
+    for(var d=0;d<depth;d++){
+      len=len/unit;
+      x1 = x1+pos[d][0]*len;
+      y1 = y1+pos[d][1]*len;
+    }
+    ctx.fillStyle="rgb(255,0,255)";
+    ctx.fillRect(x1, y1, len, len);
+    console.log("draw:"+i.body.pos.toString());
+    a=1;
+  }
+  //draw alllist
+  console.log("draw alllist:"+solver.printalllist());
+  for(var i=0;i<solver.alllist.length;i++){
+    var body = solver.alllist[i];
+    var x1=x;
+    var y1=y;
+    var len=maplen;
+    var pos=body.pos;
+    var depth=pos.length;
+    for(var d=0;d<depth;d++){
+      len=len/unit;
+      x1 = x1+pos[d][0]*len;
+      y1 = y1+pos[d][1]*len;
+    }
+    ctx.fillStyle="rgb(255,0,255)";
+    ctx.fillRect(x1, y1, len, len);
+    console.log("draw:"+body.pos.toString());
+    a=1;
+  }
 }
 var drawUnit = function(d, x0, y0, len){
   ctx.fillStyle  ="black";
@@ -122,7 +218,7 @@ var drawUnit = function(d, x0, y0, len){
   for(var x=0;x<unit;x++){
     for(var y=0;y<unit;y++){
       if(map[y][x]){
-        if(d>=depth){
+        if(d>=drawdepth){
           ctx.fillRect  (x0+x*childlen, y0+y*childlen, childlen, childlen);
         }else{
           //draw inner recursively
@@ -146,7 +242,8 @@ var handleMouseDown = function(){
   map[my][mx]^=1;
   lastpos[0]=mx;
   lastpos[1]=my;
-  isRequestedDraw = true;
+  reqdraw = true;
+  reqinitsolver = true;
 }
 var handleMouseDragging = function(){
   var childlen = maplen/unit;
@@ -159,7 +256,8 @@ var handleMouseDragging = function(){
   map[my][mx]^=1;
   lastpos[0]=mx;
   lastpos[1]=my;
-  isRequestedDraw = true;
+  reqdraw = true;
+  reqinitsolver = true;
 }
 var handleMouseUp = function(){
 }
