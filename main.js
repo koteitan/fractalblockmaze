@@ -1,8 +1,8 @@
 //entry point--------------------
 window.onload = function(){
-  unit        = 4;
+  unit        = 3;
   drawdepth   = 3;
-  solverdepth = 1;
+  solverdepth = 3;
   form0.unit.value  = unit;
   form0.depth.value = drawdepth;
   map=[
@@ -12,12 +12,11 @@ window.onload = function(){
     [1,1,0,0]
   ];
   map=[
-    [1,0,1,1],
-    [0,0,0,1],
-    [1,0,1,1],
-    [1,0,0,0]
+    [1,0,1],
+    [0,1,0],
+    [1,0,1],
   ];
-  initSolver(0);
+  initSolver(1);
   initDraw();
   initEvent(can);
   window.onresize();
@@ -25,7 +24,7 @@ window.onload = function(){
 }
 var onchangesolverdepth = function(){
   solverdepth = form0.solverdepth.value;
-  initSolver(0);
+  reqinitsolver = true;
   reqdraw = true;
 }
 var onchangedrawdepth = function(){
@@ -69,7 +68,6 @@ var procSolver = function(){
   if(reqinitsolver){
     initSolver(1);
     reqinitsolver = 0;
-    return;
   }
 
   switch(solverstatus){
@@ -78,8 +76,8 @@ var procSolver = function(){
         var result = solver.searchnext();
         if(result!=0)break;
       }
+      reqdraw = true;
       if(result==2){// unsolved
-        reqdraw = true;
         if(solver.depth < solverdepth){
           var newdepth = solver.depth+1;
           initSolver(newdepth);
@@ -87,7 +85,6 @@ var procSolver = function(){
           solverstatus = 2; // finally unsolved
         }
       }else if(result==1){// solved
-        reqdraw = true;
         solverstatus = 1;
       }
       break;
@@ -174,7 +171,6 @@ var procDraw = function(){
   drawUnit(0, x, y, maplen);
   
   //draw openlist
-  console.log("draw openlist:"+solver.printopenlist());
   for(var i=solver.openlist.top;i!=null;i=i.next){
     var x1=x;
     var y1=y;
@@ -188,11 +184,9 @@ var procDraw = function(){
     }
     ctx.fillStyle="rgb(255,0,255)";
     ctx.fillRect(x1, y1, len, len);
-    console.log("draw:"+i.body.pos.toString());
     a=1;
   }
   //draw alllist
-  console.log("draw alllist:"+solver.printalllist());
   for(var i=0;i<solver.alllist.length;i++){
     var body = solver.alllist[i];
     var x1=x;
@@ -207,8 +201,6 @@ var procDraw = function(){
     }
     ctx.fillStyle="rgb(255,0,255)";
     ctx.fillRect(x1, y1, len, len);
-    console.log("draw:"+body.pos.toString());
-    a=1;
   }
 }
 var drawUnit = function(d, x0, y0, len){
