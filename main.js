@@ -1,25 +1,19 @@
 //entry point--------------------
 window.onload = function(){
   map=[
-    [1,0,1,1],
-    [0,1,0,1],
-    [1,0,1,1],
-    [1,1,0,0]
-  ];
-  map=[
     [1,0,1],
     [0,1,0],
     [1,0,1],
   ];
   map=[
-    [0,0,0,0],
-    [0,0,0,0],
-    [1,1,1,1],
-    [0,0,0,0]
+    [1,0,1,1],
+    [0,1,0,1],
+    [1,0,1,1],
+    [1,1,0,0]
   ];
   unit        = map.length;
   drawdepth   = 3;
-  solverdepth = 3;
+  solverdepth = 4;
   form0.unit.value        = unit;
   form0.drawdepth.value   = drawdepth;
   form0.solverdepth.value = solverdepth;
