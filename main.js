@@ -264,12 +264,12 @@ window.onresize = function(){ //browser resize
   var wy=document.documentElement.clientHeight;
   var cx= [(wx- 10)*0.99, 20].max();
   var cy= [(wy-250)*0.99, 20].max();
-  document.getElementById("outcanvas").width = cx;
-  document.getElementById("outcanvas").height= cy;
   direction = wy>=wx;
-  if(direction){
+  if(direction){ //vertical
+    document.getElementById("outcanvas").width = cx;
+    document.getElementById("outcanvas").height= cx*2;
     maplen = Math.floor([(can.width-margin*2)/1, (can.height-margin*4)/2].min());
-  }else{
+  }else{ // horizontal
     maplen = Math.floor([(can.width-margin*4)/2, (can.height-margin*2)/1].min());
   }
   reqdraw = true;
