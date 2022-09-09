@@ -34,16 +34,17 @@ var Solver = function(world, depth){
   }
 }
 Solver.prototype.addopenlist=function(body){
-  console.log("addopenlist:"+body.pos.toString());
+//  debugout("try add:"+body.pos.toString());
   //check alllist
   if(this.ismemberalllist(body)){ //is member of alllist
-    console.log("alllist=["+this.printalllist()+"] -> rejected.");
+//    debugout("alllist=["+this.printalllist()+"] -> rejected.");
     return; // nop and return
   }
   //add into alllist
   this.addalllist(body);
-  console.log("alllist=["+this.printalllist()+"] -> accepted.");
-  console.log("openlist=["+this.printopenlist()+"].");
+  debugout("success to add:"+body.pos.toString());
+//  debugout("alllist=["+this.printalllist()+"] -> accepted.");
+//  debugout("openlist=["+this.printopenlist()+"].");
   
   if(this.openlist.top==null){ // first add
     var item = new List(body, 1, null);
@@ -88,7 +89,7 @@ Solver.prototype.delopenlist = function(node){
 Solver.prototype.printopenlist = function(){
   if(this.openlist.top==null) return;
   for(var i=this.openlist.top;i!=null;i=i.next){
-    console.log("pos="+i.body.pos.toString()+", cost="+i.body.cost);
+    debugout("pos="+i.body.pos.toString()+", cost="+i.body.cost);
   }
 }
 
@@ -114,14 +115,25 @@ Solver.prototype.searchnext=function(){
   var depth = pos.length;
   var pos1;
   var isgoal = false;
+  debugout(this.printopenlist());
+  debugout("top pos="+pos.toString());
+  if(pos.isEqual([[1,2],[0,3] ])){
+    var x=1;
+  }
+  //try all 4 directions
   for(dir=0;dir<4;dir++){
+    pos1 = pos.clone();
+    //try moving in movamt in a dimension movdim
     var movdim=movelist[dir][0];
     var movamt=movelist[dir][1];
-    pos1 = pos.clone();
-    //increment
+    
+    //carrying loop -> pos1 (catch over=true)
     var over=true;
     for(d=depth-1;d>=0;d--){
       pos1[d][movdim]+=movamt;
+//      debugout("try pos1 "+pos1.toString());
+      
+      //check outside -> over
       if(pos1[d][movdim]<0 || pos1[d][movdim]>=unit){// outside
         pos1[d][movdim]=(pos1[d][movdim]+unit)%unit;
       }else{
@@ -130,9 +142,10 @@ Solver.prototype.searchnext=function(){
       }
       //try next depth
     }
+    
     if(!over){//not over
-      console.log("try pos1 "+pos1.toString());
-      //judge pos1 is empty
+      
+      //judge if pos1 is empty -> isempty
       var isempty=false;
       for(d=0;d<pos1.length;d++){
         if(map[pos1[d][1]][pos1[d][0]]==0){//empty in depth d
@@ -140,20 +153,22 @@ Solver.prototype.searchnext=function(){
           pos1.splice(d+1);//delete over depth d
         }
       }
+      
       if(isempty){// pos1 is empty
-        console.log("pos1 is empty.");
-      //add it as it is
+        
+        //add it as it is
         var node1 = new Node(pos1, parent);
         node1.cost = this.evalcost(parent.cost, node1);
         this.addopenlist(node1);
+        
       }else{// pos1 is not empty
-        console.log("pos1 is not empty.");
+        
         if(depth < this.depth){
           //search deeper nodes
           if(movdim==0){//x
             for(var y=0;y<unit;y++){
               var x=(movamt==-1)?unit-1:0;
-              if(!map[y][x]){
+              if(map[y][x]==0){
                 var pos2 = pos1.clone();
                 pos2.push([x,y]);
                 var node2 = new Node(pos2, parent);
@@ -164,7 +179,7 @@ Solver.prototype.searchnext=function(){
           }else{//y
             for(var x=0;x<unit;x++){
               var y=(movamt==-1)?unit-1:0;
-              if(!map[y][x]){
+              if(map[y][x]==0){
                 var pos2 = pos1.clone();
                 pos2.push([x,y]);
                 var node2 = new Node(pos2, parent);
@@ -175,6 +190,7 @@ Solver.prototype.searchnext=function(){
           }//if movdim==0
         }// depth
       }//! else isempty
+      
     }else{//over
       if(pos1[0][1]<0){ // found goal
         ret = 1;
