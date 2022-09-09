@@ -270,6 +270,8 @@ window.onresize = function(){ //browser resize
     document.getElementById("outcanvas").height= cx*2;
     maplen = Math.floor([(can.width-margin*2)/1, (can.height-margin*4)/2].min());
   }else{ // horizontal
+    document.getElementById("outcanvas").width = cx;
+    document.getElementById("outcanvas").height= cy;
     maplen = Math.floor([(can.width-margin*4)/2, (can.height-margin*2)/1].min());
   }
   reqdraw = true;
