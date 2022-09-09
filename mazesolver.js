@@ -145,51 +145,25 @@ Solver.prototype.searchnext=function(){
     
     if(!over){//not over
       
-      //judge if pos1 is empty -> isempty
+      //enlarge pos1 if possible -> pos1 updated, isempty
       var isempty=false;
       for(d=0;d<pos1.length;d++){
         if(map[pos1[d][1]][pos1[d][0]]==0){//empty in depth d
           isempty=true;
           pos1.splice(d+1);//delete over depth d
+          break;
         }
       }
       
       if(isempty){// pos1 is empty
-        
         //add it as it is
         var node1 = new Node(pos1, parent);
         node1.cost = this.evalcost(parent.cost, node1);
         this.addopenlist(node1);
-        
-      }else{// pos1 is not empty
-        
-        if(depth < this.depth){
-          //search deeper nodes
-          if(movdim==0){//x
-            for(var y=0;y<unit;y++){
-              var x=(movamt==-1)?unit-1:0;
-              if(map[y][x]==0){
-                var pos2 = pos1.clone();
-                pos2.push([x,y]);
-                var node2 = new Node(pos2, parent);
-                node2.cost = this.evalcost(parent.cost, node2);
-                this.addopenlist(node2);
-              }
-            }//for y
-          }else{//y
-            for(var x=0;x<unit;x++){
-              var y=(movamt==-1)?unit-1:0;
-              if(map[y][x]==0){
-                var pos2 = pos1.clone();
-                pos2.push([x,y]);
-                var node2 = new Node(pos2, parent);
-                node2.code = this.evalcost(parent.cost, node2);
-                this.addopenlist(node2);
-              }
-            }//for x
-          }//if movdim==0
-        }// depth
-      }//! else isempty
+      }else{
+        //try enter pos1
+        rectry(this, pos1, parent, movdim, movamt);
+      }
       
     }else{//over
       if(pos1[0][1]<0){ // found goal
@@ -204,6 +178,48 @@ Solver.prototype.searchnext=function(){
   
   return 0; //return unknown
 }
+
+/* recursively try enter pos1 by the direction (movdim, movamt). */
+rectry = function(solver, pos1, parent, movdim, movamt){
+  if(pos1.length > solver.depth) return;
+  
+  if(movdim==0){//x
+    
+    for(var y=0;y<unit;y++){
+      var x=(movamt==-1)?unit-1:0;
+      var pos2 = pos1.clone();
+      pos2.push([x,y]);
+      if(map[y][x]==0){ // pos2 is empty
+        // empty
+        var node2 = new Node(pos2, parent);
+        node2.cost = solver.evalcost(parent.cost, node2);
+        solver.addopenlist(node2);
+      }else{//not empty
+        //try enter pos2 recursively
+        rectry(solver, pos2, parent, movdim, movamt);
+      }
+    }//for y
+    
+  }else{//y
+    
+    for(var x=0;x<unit;x++){
+      var y=(movamt==-1)?unit-1:0;
+      var pos2 = pos1.clone();
+      pos2.push([x,y]);
+      if(map[y][x]==0){ // is empty
+        var node2 = new Node(pos2, parent);
+        node2.cost = solver.evalcost(parent.cost, node2);
+        solver.addopenlist(node2);
+      }else{ //not empty
+        //try enter pos2 recursively
+        rectry(solver, pos2, parent, movdim, movamt);
+      }
+    }//for x
+    
+  }//if movdim==0
+}
+
+
 Solver.prototype.evalcost = function(parent_cost, node){
   var pos   = node.pos;
   var depth = pos.length;
