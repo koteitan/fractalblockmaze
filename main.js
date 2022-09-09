@@ -259,12 +259,13 @@ var handleMouseUp = function(){
 var handleMouseWheel = function(){
 }
 window.onresize = function(){ //browser resize
-  var wx,wy;
   var agent = navigator.userAgent;
-  var wx= [(document.documentElement.clientWidth-10)*0.99, 320].max();
-  var wy= [(document.documentElement.clientHeight-300), 20].max();
-  document.getElementById("outcanvas").width = wx;
-  document.getElementById("outcanvas").height= wy;
+  var wx=document.documentElement.clientWidth;
+  var wy=document.documentElement.clientHeight;
+  var cx= [(wx- 10)*0.99, 20].max();
+  var cy= [(wy-250)*0.99, 20].max();
+  document.getElementById("outcanvas").width = cx;
+  document.getElementById("outcanvas").height= cy;
   direction = wy>=wx;
   if(direction){
     maplen = Math.floor([(can.width-margin*2)/1, (can.height-margin*4)/2].min());
