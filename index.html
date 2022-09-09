@@ -33,11 +33,11 @@
 <form name="form0">
 <table align=left>
   <tr><td>unit:      </td><td><input type=text id='unit' value =4></td>
-    <td><input type=button id="unitbutton" value=set onclick="javascript:onchangeunit();"></td></tr>
+    <td><input type=button id="unitbutton" value=set onclick="javascript:isunitchanged=true;"></td></tr>
   <tr><td>draw depth:</td><td><input type=text id='drawdepth' value=1></td>
-    <td><input type=button id="drawdepthbutton" value=set onclick="javascript:onchangedrawdepth();"></td></tr>
+    <td><input type=button id="drawdepthbutton" value=set onclick="javascript:isdrawdepthchanged=true;"></td></tr>
   <tr><td>solver depth:</td><td><input type=text id='solverdepth' value=1></td>
-    <td><input type=button id="solverdepthbutton" value=set onclick="javascript:onchangesolverdepth();"></td></tr>
+    <td><input type=button id="solverdepthbutton" value=set onclick="javascript:issolverdepthchanged=true;"></td></tr>
 </table>
 </form>
 <address id="address">fractal block maze version <span id="versiondisplay"></span><br>

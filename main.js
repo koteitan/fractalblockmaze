@@ -1,11 +1,5 @@
 //entry point--------------------
 window.onload = function(){
-  unit        = 3;
-  drawdepth   = 3;
-  solverdepth = 3;
-  form0.unit.value  = unit;
-  form0.drawdepth.value = drawdepth;
-  form0.solverdepth.value = solverdepth;
   map=[
     [1,0,1,1],
     [0,1,0,1],
@@ -17,32 +11,64 @@ window.onload = function(){
     [0,1,0],
     [1,0,1],
   ];
+  map=[
+    [0,0,0,0],
+    [0,0,0,0],
+    [1,1,1,1],
+    [0,0,0,0]
+  ];
+  unit        = map.length;
+  drawdepth   = 3;
+  solverdepth = 3;
+  form0.unit.value        = unit;
+  form0.drawdepth.value   = drawdepth;
+  form0.solverdepth.value = solverdepth;
   initSolver(1);
   initDraw();
   initEvent(can);
   window.onresize();
   setInterval(procAll, 1000/frameRate); //enter gameloop
 }
-var onchangesolverdepth = function(){
-  solverdepth = form0.solverdepth.value;
-  reqinitsolver = true;
-  reqdraw = true;
+//game loop ------------------
+var procAll=function(){
+  procEvent();
+  procForm();
+  if(reqdraw){
+    procDraw();
+    reqdraw = false;
+  }
+  procSolver();
 }
-var onchangedrawdepth = function(){
-  drawdepth = form0.drawdepth.value;
-  reqdraw = true;
+//form events------------
+issolverdepthchanged = false;
+isdrawdepthchange    = false;
+isunitchanged        = false;
+var procForm = function(){
+  if(issolverdepthchanged){
+    solverdepth = parseInt(form0.solverdepth.value);
+    reqinitsolver = true;
+    reqdraw = true;
+    ischangesolverdepth = false;
+  }
+  if(isdrawdepthchange){
+    drawdepth = parseInt(form0.drawdepth.value);
+    reqdraw = true;
+    isdrawdepthchange = false;
+  }
+  if(isunitchanged){
+    initMap(parseInt(form0.unit.value));
+    reqdraw = true;
+    isunitchanged = false;
+  }
 }
-var onchangeunit = function(){
-  initMap(form0.unit.value);
-  reqdraw = true;
-}
-//maps-------------------
+//solver -----------------
 var unit;
 var drawdepth;
 var solverdepth;
 var direction; // 0=horizontal
 var map=[
 ];
+//initMap: make a empty map
 var initMap=function(_unit){
   unit = _unit;
   map = new Array(unit);
@@ -53,16 +79,16 @@ var initMap=function(_unit){
     }
   }
 }
-//solver -----------------
 var solver;
 var world;
 var trials = 100;
 var solverstatus = 0; /* 0:unknown, 1:solved, 2:unsolved-end */
 var reqinitsolver = 0;
+//initSolver: renew solver instance for the depth depth
 var initSolver = function(depth){
   world  = new World(unit, map);
   solver = new Solver(world, depth);
-  console.log("Solver(,"+depth+")-------!!");
+  debugout("Solver(,"+depth+")-------!!");
   solverstatus = 0;
 }
 var procSolver = function(){
@@ -93,32 +119,14 @@ var procSolver = function(){
       break;
   }//switch status
 }
-//game loop ------------------
-var procAll=function(){
-  procEvent();
-  procSolver();
-  if(reqdraw){
-    procDraw();
-    reqdraw = false;
+// debugout ------------------------
+var isdebugout = false; // false for release
+var debugout = function(str){
+  if(isdebugout){
+    console.log(str);
   }
 }
-// html ----------------------------
 var debug;
-window.onresize = function(){ //browser resize
-  var wx,wy;
-  var agent = navigator.userAgent;
-  var wx= [(document.documentElement.clientWidth-10)*0.99, 320].max();
-  var wy= [(document.documentElement.clientHeight-300), 20].max();
-  document.getElementById("outcanvas").width = wx;
-  document.getElementById("outcanvas").height= wy;
-  direction = wy>=wx;
-  if(direction){
-    maplen = Math.floor([(can.width-margin*2)/1, (can.height-margin*4)/2].min());
-  }else{
-    maplen = Math.floor([(can.width-margin*4)/2, (can.height-margin*2)/1].min());
-  }
-  reqdraw = true;
-};
 // graphics ------------------------
 var ctx;
 var can;
@@ -221,7 +229,7 @@ var drawUnit = function(d, x0, y0, len){
     }
   }
 }
-//event---------------------
+//GUI event---------------------
 var lastpos=[-1,-1];
 var downpos=[-1,-1];// start of drag
 var movpos =[-1,-1];// while drag
@@ -230,7 +238,7 @@ var handleMouseDown = function(){
   var mx = Math.floor((mouseDownPos[0]-margin)/childlen);
   var my = Math.floor((mouseDownPos[1]-margin)/childlen);
 
-  if(mx>=unit||my>=unit) return;
+  if(mx>=unit||my>=unit||mx<0||my<0) return;
 
   map[my][mx]^=1;
   lastpos[0]=mx;
@@ -243,7 +251,7 @@ var handleMouseDragging = function(){
   var mx = Math.floor((mousePos[0]-margin)/childlen);
   var my = Math.floor((mousePos[1]-margin)/childlen);
 
-  if(mx>=unit||my>=unit) return;
+  if(mx>=unit||my>=unit||mx<0||my<0) return;
   if(lastpos[0]==mx && lastpos[1]==my) return;
 
   map[my][mx]^=1;
@@ -256,4 +264,19 @@ var handleMouseUp = function(){
 }
 var handleMouseWheel = function(){
 }
+window.onresize = function(){ //browser resize
+  var wx,wy;
+  var agent = navigator.userAgent;
+  var wx= [(document.documentElement.clientWidth-10)*0.99, 320].max();
+  var wy= [(document.documentElement.clientHeight-300), 20].max();
+  document.getElementById("outcanvas").width = wx;
+  document.getElementById("outcanvas").height= wy;
+  direction = wy>=wx;
+  if(direction){
+    maplen = Math.floor([(can.width-margin*2)/1, (can.height-margin*4)/2].min());
+  }else{
+    maplen = Math.floor([(can.width-margin*4)/2, (can.height-margin*2)/1].min());
+  }
+  reqdraw = true;
+};
 
