@@ -10,10 +10,9 @@ var Node=function(pos, parent){
 Node.prototype.toString=function(){
   return "<"+this.pos.toString()+","+this.cost+">";
 }
-var List=function(body, cost, next){
+var List=function(body, next){
   this.body  = body;
-  this.score = cost;
-  this.next  = null;
+  this.next  = next;
 }
 var Solver = function(world, depth){
   this.depth = depth;
@@ -32,34 +31,40 @@ Solver.prototype.addopenlist=function(body){
   if(this.ismemberalllist(body)){ //is member of alllist
     return; // nop and return
   }
+//  console.log("try add "+body.toString());
   //add into alllist
   this.addalllist(body);
 //  debugout("success to add:"+body.pos.toString());
   
   if(this.openlist.top==null){ // first add
-    var item = new List(body, 1, null);
+    var item = new List(body, null);
     this.openlist.top = item;
   }else{ // after second
     var cost=body.cost;
     var parent = null;
     var isadded = false;
     for(var i=this.openlist.top;i!=null;i=i.next){
-      if(i.cost < cost){
-        if(parent!=null){
-          var item = new List(body, cost, parent.next);
-          parent.next = item;
-        }else{//i==top
-          var item = new List(body, cost, parent.next);
+      if(cost <= i.body.cost){
+        if(i==this.openlist.top){//i==top
+          var item = new List(body, i);
           this.openlist.top = item;
+          isadded = true;
+          break;
+        }else{
+          var item = new List(body, i);
+          parent.next = item;
+          isadded = true;
+          break;
         }
       }
       parent = i;
     }//for i
     if(!isadded){// highest cost
-      var item = new List(body, cost, parent.next);
+      var item = new List(body, null);
       parent.next = item;
     }
   }
+//  console.log("openlist after = "+this.printopenlist());
 }
 Solver.prototype.delopenlist = function(node){
   var parent = null;
@@ -211,6 +216,9 @@ rectry = function(solver, pos1, parent, movdim, movamt){
 
 
 Solver.prototype.evalcost = function(pcost, node){
+  var d = node.pos.length;
+  return d + node.pos[d-1][1]/d;
+  /*
   var pos   = node.pos;
   var depth = pos.length;
   var unit = this.world.unit;
@@ -222,6 +230,7 @@ Solver.prototype.evalcost = function(pcost, node){
     cind /= unit;
   }
   return cost;
+  */
 }
 Solver.prototype.addalllist = function(node){
   this.alllist.push(node);
@@ -236,11 +245,12 @@ Solver.prototype.ismemberalllist = function(node){
 }
 Solver.prototype.printalllist=function(){
   var str="";
-  for(var i=0;i<this.alllist.length;i++) str += this.alllist[i].toString(); 
+  for(var i=0;i<this.alllist.length;i++) str += this.alllist[i].toString();
   return str;
 }
 Solver.prototype.printopenlist=function(){
   var str="";
   for(var i=this.openlist.top;i!=null;i=i.next) str += i.body.toString(); 
+  for(var i=this.openlist.top;i!=null;i=i.next) console.log(i.body.toString()); 
   return str;
 }
