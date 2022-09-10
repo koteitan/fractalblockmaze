@@ -31,13 +31,41 @@ var procAll=function(){
     procDraw();
     reqdraw = false;
   }
-  procSolver();
+  if(!ispaused){
+    procSolver();
+  }
 }
 //form events------------
-issolverdepthchanged = false;
-isdrawdepthchange    = false;
-isunitchanged        = false;
+var ispaused=false;
+var onclickpause = function(){
+  ispaused=!ispaused;
+}
+var isreset=true;
+var onclickreset = function(){
+  isreset = true;
+}
+var isunitchanged = false;
+var onchangeunit = function(x){
+  form0.unit.value = [parseInt(form0.unit.value)+x, 0].max();
+  isunitchanged = true;
+}
+var isdrawdepthchange = false;
+var onchangedrawdepth = function(x){
+  form0.drawdepth.value = [parseInt(form0.drawdepth.value)+x, 0].max();
+  isdrawdepthchanged = true;
+}
+var issolverdepthchanged = false;
+var onchangesolverdepth = function(x){
+  form0.solverdepth.value = [parseInt(form0.solverdepth.value)+x, 0].max();
+  issolverdepthchanged = true;
+}
+/* apply parameter change from form in game loop */
 var procForm = function(){
+  if(isreset){
+    reqinitsolver = true;
+    reqdraw = true;
+    isreset = false;
+  }
   if(issolverdepthchanged){
     solverdepth = parseInt(form0.solverdepth.value);
     reqinitsolver = true;
@@ -52,7 +80,29 @@ var procForm = function(){
   if(isunitchanged){
     initMap(parseInt(form0.unit.value));
     reqdraw = true;
+    reqinitsolver = true;
     isunitchanged = false;
+  }
+  switch(solverstt){
+    case 0://solving
+    form0.solverstt.value = "solving in depth "+solver.depth+"...";
+    break;
+    
+    case 1:
+    if(ispaused){
+      form0.solverstt.value = "paused";
+    }else{
+      form0.solverstt.value = "solved in depth "+solver.depth+".";
+    }
+    break;
+
+    case 2://unsolved
+    form0.solverstt.value = "unsolved in depth "+solverdepth+".";
+    break;
+    
+    default:
+    form0.solverstt.value = "unknown status";
+    break;
   }
 }
 //solver -----------------
@@ -76,14 +126,14 @@ var initMap=function(_unit){
 var solver;
 var world;
 var trials = 100;
-var solverstatus = 0; /* 0:unknown, 1:solved, 2:unsolved-end */
+var solverstt = 0; /* 0:unknown, 1:solved, 2:unsolved-end */
 var reqinitsolver = 0;
 //initSolver: renew solver instance for the depth depth
 var initSolver = function(depth){
   world  = new World(unit, map);
   solver = new Solver(world, depth);
   debugout("Solver(,"+depth+")-------!!");
-  solverstatus = 0;
+  solverstt = 0;
 }
 var procSolver = function(){
   if(reqinitsolver){
@@ -91,7 +141,7 @@ var procSolver = function(){
     reqinitsolver = 0;
   }
 
-  switch(solverstatus){
+  switch(solverstt){
     case 0:
       for(var i=0;i<trials;i++){
         var result = solver.searchnext();
@@ -103,15 +153,15 @@ var procSolver = function(){
           var newdepth = solver.depth+1;
           initSolver(newdepth);
         }else{
-          solverstatus = 2; // finally unsolved
+          solverstt = 2; // finally unsolved
         }
       }else if(result==1){// solved
-        solverstatus = 1;
+        solverstt = 1;
       }
       break;
     default:
       break;
-  }//switch status
+  }//switch stt
 }
 // debugout ------------------------
 var isdebugout = false; // false for release
@@ -137,23 +187,22 @@ var initDraw=function(){
 var procDraw = function(){
 
   //background
-  ctx.strokeStyle="black";
   ctx.fillStyle  ="white";
   ctx.fillRect  (0,0,can.width, can.height);
-  ctx.strokeRect(0,0,can.width, can.height);
   
   if(maplen <= 0) return;
   
   //pattern
   var childlen = maplen/unit;
-  ctx.strokeStyle="gray";
   for(var x=0;x<unit;x++){
     for(var y=0;y<unit;y++){
       if(map[y][x]){
+        ctx.strokeStyle="white";
         ctx.fillStyle  ="black";
         ctx.fillRect  (margin+x*childlen, margin+y*childlen, childlen, childlen);
         ctx.strokeRect(margin+x*childlen, margin+y*childlen, childlen, childlen);
       }else{
+        ctx.strokeStyle="black";
         ctx.fillStyle  ="white";
         ctx.fillRect  (margin+x*childlen, margin+y*childlen, childlen, childlen);
         ctx.strokeRect(margin+x*childlen, margin+y*childlen, childlen, childlen);
@@ -173,22 +222,6 @@ var procDraw = function(){
   //draw fractal
   drawUnit(0, x, y, maplen);
   
-  //draw openlist
-  for(var i=solver.openlist.top;i!=null;i=i.next){
-    var x1=x;
-    var y1=y;
-    var len=maplen;
-    var pos=i.body.pos;
-    var depth=pos.length;
-    for(var d=0;d<depth;d++){
-      len=len/unit;
-      x1 = x1+pos[d][0]*len;
-      y1 = y1+pos[d][1]*len;
-    }
-    ctx.fillStyle="rgb(255,0,255)";
-    ctx.fillRect(x1, y1, len, len);
-    a=1;
-  }
   //draw alllist
   for(var i=0;i<solver.alllist.length;i++){
     var body = solver.alllist[i];
@@ -202,8 +235,43 @@ var procDraw = function(){
       x1 = x1+pos[d][0]*len;
       y1 = y1+pos[d][1]*len;
     }
-    ctx.fillStyle="rgb(255,0,255)";
+    ctx.fillStyle="rgb(255,192,255)";
     ctx.fillRect(x1, y1, len, len);
+  }
+  if(solverstt==1){
+    //draw goalpath
+    for(var i=solver.goalpath;i!=null;i=i.parent){
+      var x1=x;
+      var y1=y;
+      var len=maplen;
+      var pos=i.pos;
+      var depth=pos.length;
+      for(var d=0;d<depth;d++){
+        len=len/unit;
+        x1 = x1+pos[d][0]*len;
+        y1 = y1+pos[d][1]*len;
+      }
+      ctx.fillStyle="rgb(64,64,255)";
+      ctx.fillRect(x1, y1, len, len);
+      a=1;
+    }
+  }else{
+    //draw openlist
+    for(var i=solver.openlist.top;i!=null;i=i.next){
+      var x1=x;
+      var y1=y;
+      var len=maplen;
+      var pos=i.body.pos;
+      var depth=pos.length;
+      for(var d=0;d<depth;d++){
+        len=len/unit;
+        x1 = x1+pos[d][0]*len;
+        y1 = y1+pos[d][1]*len;
+      }
+      ctx.fillStyle="rgb(255,0,255)";
+      ctx.fillRect(x1, y1, len, len);
+      a=1;
+    }
   }
 }
 var drawUnit = function(d, x0, y0, len){
@@ -262,15 +330,15 @@ window.onresize = function(){ //browser resize
   var agent = navigator.userAgent;
   var wx=document.documentElement.clientWidth;
   var wy=document.documentElement.clientHeight;
-  var cx= [(wx- 10)*0.99, 20].max();
-  var cy= [(wy-250)*0.99, 20].max();
+  var cx= [(wx- 10)*0.9, 20].max();
+  var cy= [(wy-250)*0.9, 20].max();
   direction = wy>=wx;
   if(direction){ //vertical
-    document.getElementById("outcanvas").width = cx;
-    document.getElementById("outcanvas").height= cx*2;
+    document.getElementById("outcanvas").width = [cx,cy/2].min();
+    document.getElementById("outcanvas").height= cy;
     maplen = Math.floor([(can.width-margin*2)/1, (can.height-margin*4)/2].min());
   }else{ // horizontal
-    document.getElementById("outcanvas").width = cx;
+    document.getElementById("outcanvas").width = [cx,cy*2].min();
     document.getElementById("outcanvas").height= cy;
     maplen = Math.floor([(can.width-margin*4)/2, (can.height-margin*2)/1].min());
   }
