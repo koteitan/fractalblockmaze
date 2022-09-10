@@ -11,17 +11,17 @@ window.onload = function(){
     [1,0,1,1],
     [1,1,0,0]
   ];
-  unit        = map.length;
-  drawdepth   = 3;
-  solverdepth = 4;
+  unit            = map.length;
+  drawdepth       = 3;
+  usersolverdepth = 5;
   form0.unit.value        = unit;
   form0.drawdepth.value   = drawdepth;
-  form0.solverdepth.value = solverdepth;
+  form0.usersolverdepth.value = usersolverdepth;
   initSolver(1);
   initDraw();
   initEvent(can);
   window.onresize();
-  setInterval(procAll, 1000/frameRate); //enter gameloop
+  setInterval(procAll, 100/frameRate); //enter gameloop
 }
 //game loop ------------------
 var procAll=function(){
@@ -49,15 +49,15 @@ var onchangeunit = function(x){
   form0.unit.value = [parseInt(form0.unit.value)+x, 0].max();
   isunitchanged = true;
 }
-var isdrawdepthchange = false;
+var isdrawdepthchanged = false;
 var onchangedrawdepth = function(x){
-  form0.drawdepth.value = [parseInt(form0.drawdepth.value)+x, 0].max();
+  form0.drawdepth.value = [parseInt(form0.drawdepth.value)+x, 1].max();
   isdrawdepthchanged = true;
 }
-var issolverdepthchanged = false;
-var onchangesolverdepth = function(x){
-  form0.solverdepth.value = [parseInt(form0.solverdepth.value)+x, 0].max();
-  issolverdepthchanged = true;
+var isusersolverdepthchanged = false;
+var onchangeusersolverdepth = function(x){
+  form0.usersolverdepth.value = [parseInt(form0.usersolverdepth.value)+x, 1].max();
+  isusersolverdepthchanged = true;
 }
 /* apply parameter change from form in game loop */
 var procForm = function(){
@@ -66,16 +66,16 @@ var procForm = function(){
     reqdraw = true;
     isreset = false;
   }
-  if(issolverdepthchanged){
-    solverdepth = parseInt(form0.solverdepth.value);
+  if(isusersolverdepthchanged){
+    usersolverdepth = parseInt(form0.usersolverdepth.value);
     reqinitsolver = true;
     reqdraw = true;
-    ischangesolverdepth = false;
+    isusersolverdepthchanged = false;
   }
-  if(isdrawdepthchange){
+  if(isdrawdepthchanged){
     drawdepth = parseInt(form0.drawdepth.value);
     reqdraw = true;
-    isdrawdepthchange = false;
+    isdrawdepthchanged = false;
   }
   if(isunitchanged){
     initMap(parseInt(form0.unit.value));
@@ -97,7 +97,7 @@ var procForm = function(){
     break;
 
     case 2://unsolved
-    form0.solverstt.value = "unsolved in depth "+solverdepth+".";
+    form0.solverstt.value = "unsolved in depth "+usersolverdepth+".";
     break;
     
     default:
@@ -108,7 +108,7 @@ var procForm = function(){
 //solver -----------------
 var unit;
 var drawdepth;
-var solverdepth;
+var usersolverdepth;
 var direction; // 0=horizontal
 var map=[
 ];
@@ -132,7 +132,7 @@ var reqinitsolver = 0;
 var initSolver = function(depth){
   world  = new World(unit, map);
   solver = new Solver(world, depth);
-  debugout("Solver(,"+depth+")-------!!");
+//  debugout("Solver(,"+depth+")-------!!");
   solverstt = 0;
 }
 var procSolver = function(){
@@ -149,7 +149,7 @@ var procSolver = function(){
       }
       reqdraw = true;
       if(result==2){// unsolved
-        if(solver.depth < solverdepth){
+        if(solver.depth+1 <= usersolverdepth){
           var newdepth = solver.depth+1;
           initSolver(newdepth);
         }else{
