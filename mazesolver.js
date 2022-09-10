@@ -169,7 +169,7 @@ Solver.prototype.searchnext=function(){
 
 /* recursively try enter pos1 by the direction (movdim, movamt). */
 rectry = function(solver, pos1, parent, movdim, movamt){
-  if(pos1.length > solver.depth) return;
+  if(pos1.length >= solver.depth) return;
 
   var pcost = (parent!=null)?parent.cost:0;
   
