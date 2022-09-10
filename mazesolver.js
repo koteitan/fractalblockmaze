@@ -21,30 +21,20 @@ var Solver = function(world, depth){
   this.alllist  = [];
   this.openlist = function(){};
   this.openlist.top   = null;
+  this.goalpath = null;
   //initialize openlist
   var unit=world.unit;
   var map=world.map;
-  var y=unit-1;
-  for(var x=0;x<unit;x++){
-    if(!map[y][x]){
-      var node = new Node([[x,y]], null);
-      node.cost = this.evalcost(0, node);
-      this.addopenlist(node, node.cost);
-    }
-  }
+  rectry(this, [], null, +1/* y */, -1 /* enter from bottom side */);
 }
 Solver.prototype.addopenlist=function(body){
-//  debugout("try add:"+body.pos.toString());
   //check alllist
   if(this.ismemberalllist(body)){ //is member of alllist
-//    debugout("alllist=["+this.printalllist()+"] -> rejected.");
     return; // nop and return
   }
   //add into alllist
   this.addalllist(body);
-  debugout("success to add:"+body.pos.toString());
-//  debugout("alllist=["+this.printalllist()+"] -> accepted.");
-//  debugout("openlist=["+this.printopenlist()+"].");
+//  debugout("success to add:"+body.pos.toString());
   
   if(this.openlist.top==null){ // first add
     var item = new List(body, 1, null);
@@ -104,7 +94,6 @@ var movelist=[//movelist[dim][amount]
  * ret = judge ={0:unknown yet, 1:found, 2:unsolved}
  * */
 Solver.prototype.searchnext=function(){
-  var goalnode = null;
   if(this.openlist.top==null) return 2; //unsolved
   var world = this.world;
   var map   = world.map;
@@ -114,9 +103,8 @@ Solver.prototype.searchnext=function(){
   var pos   = parent.pos;
   var depth = pos.length;
   var pos1;
-  var isgoal = false;
-  debugout(this.printopenlist());
-  debugout("top pos="+pos.toString());
+//  debugout(this.printopenlist());
+//  debugout("top pos="+pos.toString());
   if(pos.isEqual([[1,2],[0,3] ])){
     var x=1;
   }
@@ -166,9 +154,9 @@ Solver.prototype.searchnext=function(){
       }
       
     }else{//over
-      if(pos1[0][1]<0){ // found goal
-        ret = 1;
-        return 1; // return solved
+      if(movdim==1 && movamt==-1 && pos[pos.length-1][1]==0){
+        this.goalpath = parent;
+        return 1; // goal
       }
     }//if over
   }//for dir
@@ -182,6 +170,8 @@ Solver.prototype.searchnext=function(){
 /* recursively try enter pos1 by the direction (movdim, movamt). */
 rectry = function(solver, pos1, parent, movdim, movamt){
   if(pos1.length > solver.depth) return;
+
+  var pcost = (parent!=null)?parent.cost:0;
   
   if(movdim==0){//x
     
@@ -192,7 +182,7 @@ rectry = function(solver, pos1, parent, movdim, movamt){
       if(map[y][x]==0){ // pos2 is empty
         // empty
         var node2 = new Node(pos2, parent);
-        node2.cost = solver.evalcost(parent.cost, node2);
+        node2.cost = solver.evalcost(pcost, node2);
         solver.addopenlist(node2);
       }else{//not empty
         //try enter pos2 recursively
@@ -208,7 +198,7 @@ rectry = function(solver, pos1, parent, movdim, movamt){
       pos2.push([x,y]);
       if(map[y][x]==0){ // is empty
         var node2 = new Node(pos2, parent);
-        node2.cost = solver.evalcost(parent.cost, node2);
+        node2.cost = solver.evalcost(pcost, node2);
         solver.addopenlist(node2);
       }else{ //not empty
         //try enter pos2 recursively
@@ -220,7 +210,7 @@ rectry = function(solver, pos1, parent, movdim, movamt){
 }
 
 
-Solver.prototype.evalcost = function(parent_cost, node){
+Solver.prototype.evalcost = function(pcost, node){
   var pos   = node.pos;
   var depth = pos.length;
   var unit = this.world.unit;
