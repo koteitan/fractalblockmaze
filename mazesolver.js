@@ -216,9 +216,10 @@ rectry = function(solver, pos1, parent, movdim, movamt){
 
 
 Solver.prototype.evalcost = function(pcost, node){
+  /*
   var d = node.pos.length;
   return d + node.pos[d-1][1]/d;
-  /*
+  */
   var pos   = node.pos;
   var depth = pos.length;
   var unit = this.world.unit;
@@ -230,7 +231,6 @@ Solver.prototype.evalcost = function(pcost, node){
     cind /= unit;
   }
   return cost;
-  */
 }
 Solver.prototype.addalllist = function(node){
   this.alllist.push(node);
