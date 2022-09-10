@@ -1,9 +1,9 @@
 //entry point--------------------
 window.onload = function(){
   map=[
-    [1,0,1],
-    [0,1,0],
-    [1,0,1],
+    [1,1,0],
+    [0,0,1],
+    [1,0,0],
   ];
   map=[
     [1,0,1,1],
@@ -11,9 +11,17 @@ window.onload = function(){
     [1,0,1,1],
     [1,1,0,0]
   ];
+  map=[
+    [1,1,1,0,1],
+    [0,0,1,1,0],
+    [1,1,0,0,1],
+    [0,0,1,1,1],
+    [1,1,1,1,0],
+  ];
   unit            = map.length;
-  drawdepth       = 3;
+  drawdepth       = 4;
   usersolverdepth = 5;
+//  usersolverdepth = 2;
   form0.unit.value        = unit;
   form0.drawdepth.value   = drawdepth;
   form0.usersolverdepth.value = usersolverdepth;
@@ -21,21 +29,48 @@ window.onload = function(){
   initDraw();
   initEvent(can);
   window.onresize();
-  setInterval(procAll, 100/frameRate); //enter gameloop
+  setInterval(procAll, 1000/framerate); //enter gameloop
 }
 //game loop ------------------
+var framerate  =  3; //[fps]
+var solverwait =  2; //[ms]
+var trials     = 100;
+var lasttimedraw = 0;
+var drawelapse   = 0;
+var solverelapse = 0;
+var solverstarttime = 0;
+var solvedelapse    = 0;
+var procworking = false;
 var procAll=function(){
+  if(procworking) return;
+  
   procEvent();
   procForm();
+  if(!ispaused){
+    var e = gettime();
+    procSolver();
+    solverelapse = gettime()-e;
+    trials = [1000,[1,Math.floor(100/(solverelapse/trials))].max()].min();
+  }
+  if(gettime()-lasttimedraw > 1000/framerate){
+    reqdraw = true;
+  }
   if(reqdraw){
+    var e = gettime();
     procDraw();
+    lasttimedraw = gettime();
+    drawelapse = lasttimedraw-e; // for debug
     reqdraw = false;
   }
-  if(!ispaused){
-    procSolver();
-  }
+  procworking = false;
+}
+var gettime = function(){
+  return (new Date()).getTime();
 }
 //form events------------
+var loadmap = function(){
+}
+
 var ispaused=false;
 var onclickpause = function(){
   ispaused=!ispaused;
@@ -85,19 +120,19 @@ var procForm = function(){
   }
   switch(solverstt){
     case 0://solving
-    form0.solverstt.value = "solving in depth "+solver.depth+"...";
+    form0.solverstt.value = "solving depth "+solver.depth+" for "+Math.floor((gettime()-solverstarttime)/1000)+" sec...";
     break;
     
     case 1:
     if(ispaused){
       form0.solverstt.value = "paused";
     }else{
-      form0.solverstt.value = "solved in depth "+solver.depth+".";
+      form0.solverstt.value = "solved depth "+solver.depth+" in "+Math.floor(solvedelapse/1000)+" sec.";
     }
     break;
 
     case 2://unsolved
-    form0.solverstt.value = "unsolved in depth "+usersolverdepth+".";
+      form0.solverstt.value = "unsolved depth "+solver.depth+" in "+Math.floor(solvedelapse/1000)+" sec.";
     break;
     
     default:
@@ -125,14 +160,13 @@ var initMap=function(_unit){
 }
 var solver;
 var world;
-var trials = 100;
 var solverstt = 0; /* 0:unknown, 1:solved, 2:unsolved-end */
 var reqinitsolver = 0;
 //initSolver: renew solver instance for the depth depth
 var initSolver = function(depth){
   world  = new World(unit, map);
   solver = new Solver(world, depth);
-//  debugout("Solver(,"+depth+")-------!!");
+  solverstarttime = gettime();
   solverstt = 0;
 }
 var procSolver = function(){
@@ -145,18 +179,23 @@ var procSolver = function(){
     case 0:
       for(var i=0;i<trials;i++){
         var result = solver.searchnext();
-        if(result!=0)break;
-      }
-      reqdraw = true;
-      if(result==2){// unsolved
-        if(solver.depth+1 <= usersolverdepth){
-          var newdepth = solver.depth+1;
-          initSolver(newdepth);
-        }else{
-          solverstt = 2; // finally unsolved
+        switch(result){
+          case 2:// unsolved
+            if(solver.depth+1 <= usersolverdepth){
+              var newdepth = solver.depth+1;
+              initSolver(newdepth);
+            }else{
+              solverstt = 2; // finally unsolved
+              solvedelapse = gettime()-solverstarttime;
+            }
+            break;
+          case 1:// solved
+            solverstt = 1;
+            solvedelapse = gettime()-solverstarttime;
+            break;
+          default:
+            break;
         }
-      }else if(result==1){// solved
-        solverstt = 1;
       }
       break;
     default:
@@ -177,7 +216,6 @@ var can;
 var margin = 10;
 var maplen;
 var reqdraw = true;
-var frameRate = 30; //[fps]
 //init
 var initDraw=function(){
   can = document.getElementById("outcanvas");
@@ -281,11 +319,11 @@ var drawUnit = function(d, x0, y0, len){
   for(var x=0;x<unit;x++){
     for(var y=0;y<unit;y++){
       if(map[y][x]){
-        if(d>=drawdepth){
-          ctx.fillRect  (x0+x*childlen, y0+y*childlen, childlen, childlen);
-        }else{
+        if(d<drawdepth-1){
           //draw inner recursively
           drawUnit(d+1, x0+x*childlen, y0+y*childlen, childlen);
+        }else{
+          ctx.fillRect  (x0+x*childlen, y0+y*childlen, childlen, childlen);
         }
       }
     }
@@ -331,7 +369,7 @@ window.onresize = function(){ //browser resize
   var wx=document.documentElement.clientWidth;
   var wy=document.documentElement.clientHeight;
   var cx= [(wx- 10)*0.9, 20].max();
-  var cy= [(wy-250)*0.9, 20].max();
+  var cy= [(wy-250)*0.99-140, 20].max();
   direction = wy>=wx;
   if(direction){ //vertical
     document.getElementById("outcanvas").width = [cx,cy/2].min();
