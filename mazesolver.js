@@ -139,21 +139,26 @@ Solver.prototype.searchnext=function(){
         this.addopenlist(node1);
       }else{
         //try 4 neighbour of the black
-        for(var dir2=0;dir2<4;dir2++){
-          var movdim2 = movelist[dir2][0];
-          var movamt2 = movelist[dir2][1];
-          var innerpath = this.innerpath[movdim2][(movamt2+1)/2];
-          if(innerpath > 0 && innerpath + depth < this.maxdepth){
-            var pos2    = move(solver, pos1, movdim2, movamt2);
-            if(pos2==null) continue;
-            var isempty = enlarge(solver, pos2);
-            if(isempty){
-              var node2 = new Node(pos2, parent);
-              node2.cost = this.evalcost(parent.cost, node2);
-              this.addopenlist(node2);
-            }
-          }
-        }
+        //try 4 neighbour of the black
+        if(!(movdim==1 && movamt==-1)){ // skip upper
+          if(this.innerpath[movdim][(movamt+1)/2]){ // entrance check
+            for(var dir2=0;dir2<4;dir2++){
+              var movdim2 = movelist[dir2][0];
+              var movamt2 = movelist[dir2][1];
+              var innerpath = this.innerpath[movdim2][(movamt2+1)/2];
+              if(innerpath > 0 && innerpath + depth < this.maxdepth){
+                var pos2    = move(solver, pos1, movdim2, movamt2);
+                if(pos2==null) continue;
+                var isempty = enlarge(solver, pos2);
+                if(isempty){
+                  var node2 = new Node(pos2, parent);
+                  node2.cost = this.evalcost(parent.cost, node2);
+                  this.addopenlist(node2);
+                }//if isempty
+              }// if innerpath >0
+            }//for dir2
+          }// if entrance is open
+        }// if upper
         //try enter pos1
         rectry(this, pos1, parent, movdim, movamt);
       }
