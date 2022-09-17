@@ -25,7 +25,7 @@ window.onload = function(){
   form0.unit.value        = unit;
   form0.drawdepth.value   = drawdepth;
   form0.usersolverdepth.value = usersolverdepth;
-  initSolver(1);
+  initSolver(usersolverdepth);
   initDraw();
   initEvent(can);
   window.onresize();
@@ -171,7 +171,7 @@ var initSolver = function(depth){
 }
 var procSolver = function(){
   if(reqinitsolver){
-    initSolver(1);
+    initSolver(usersolverdepth);
     reqinitsolver = 0;
   }
 
