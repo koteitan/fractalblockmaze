@@ -14,13 +14,22 @@ var List=function(body, next){
   this.body  = body;
   this.next  = next;
 }
-var Solver = function(world, depth){
-  this.depth = depth;
-  this.world = world;
+var Solver = function(world, depth, maxdepth){  
+  this.depth    = depth;
+  this.maxdepth = maxdepth;
+  this.world    = world;
   this.alllist  = [];
   this.openlist = function(){};
   this.openlist.top   = null;
   this.goalpath = null;
+  /* path[d][a]={0:no path, others:opening depth}
+    d=dimension(0 means x, 1 means y), a=amount(0 means -1, 1 means +1)
+    (d,a)=(0,0):left
+         =(0,1):right
+         =(1,0):up
+         =(1,1):down
+  */
+  this.innerpath = [[0,0],[0,0]]; 
   //initialize openlist
   var unit=world.unit;
   var map=world.map;
@@ -106,47 +115,22 @@ Solver.prototype.searchnext=function(){
 
   var parent = this.openlist.top.body; //parent = lowest cost
   var pos   = parent.pos;
-  var depth = pos.length;
-  var pos1;
-//  debugout(this.printopenlist());
+  var depth = pos.length;//  debugout(this.printopenlist());
 //  debugout("top pos="+pos.toString());
   if(pos.isEqual([[1,2],[0,3] ])){
     var x=1;
   }
   //try all 4 directions
   for(dir=0;dir<4;dir++){
-    pos1 = pos.clone();
     //try moving in movamt in a dimension movdim
-    var movdim=movelist[dir][0];
-    var movamt=movelist[dir][1];
+    var movdim = movelist[dir][0];
+    var movamt = movelist[dir][1];
+    var pos1   = move(solver, pos, movdim, movamt);
     
-    //carrying loop -> pos1 (catch over=true)
-    var over=true;
-    for(d=depth-1;d>=0;d--){
-      pos1[d][movdim]+=movamt;
-//      debugout("try pos1 "+pos1.toString());
-      
-      //check outside -> over
-      if(pos1[d][movdim]<0 || pos1[d][movdim]>=unit){// outside
-        pos1[d][movdim]=(pos1[d][movdim]+unit)%unit;
-      }else{
-        over=false;
-        break;//rewind is not needed
-      }
-      //try next depth
-    }
-    
-    if(!over){//not over
+    if(pos1!=null){//not over
       
       //enlarge pos1 if possible -> pos1 updated, isempty
-      var isempty=false;
-      for(d=0;d<pos1.length;d++){
-        if(map[pos1[d][1]][pos1[d][0]]==0){//empty in depth d
-          isempty=true;
-          pos1.splice(d+1);//delete over depth d
-          break;
-        }
-      }
+      var isempty = enlarge(solver, pos1);
       
       if(isempty){// pos1 is empty
         //add it as it is
@@ -154,11 +138,34 @@ Solver.prototype.searchnext=function(){
         node1.cost = this.evalcost(parent.cost, node1);
         this.addopenlist(node1);
       }else{
+        //try 4 neighbour of the black
+        for(var dir2=0;dir2<4;dir2++){
+          var movdim2 = movelist[dir2][0];
+          var movamt2 = movelist[dir2][1];
+          var innerpath = this.innerpath[movdim2][(movamt2+1)/2];
+          if(innerpath > 0 && innerpath + depth < this.maxdepth){
+            var pos2    = move(solver, pos1, movdim2, movamt2);
+            if(pos2==null) continue;
+            var isempty = enlarge(solver, pos2);
+            if(isempty){
+              var node2 = new Node(pos2, parent);
+              node2.cost = this.evalcost(parent.cost, node2);
+              this.addopenlist(node2);
+            }
+          }
+        }
         //try enter pos1
         rectry(this, pos1, parent, movdim, movamt);
       }
       
     }else{//over
+      //regist innerpath
+      var innerpath = this.innerpath[movdim][(movamt+1)/2];
+      if(innerpath==0){
+        this.innerpath[movdim][(movamt+1)/2] = depth;
+      }
+      
+      //judge goal
       if(movdim==1 && movamt==-1 && pos[pos.length-1][1]==0){
         this.goalpath = parent;
         return 1; // goal
@@ -172,6 +179,39 @@ Solver.prototype.searchnext=function(){
   return 0; //return unknown
 }
 
+/* returns moved position from pos in the direction movdim and movamt */
+move = function(solver, pos, movdim, movamt){
+  var pos1 = pos.clone();
+  var unit = solver.world.unit;
+  
+  //carrying loop -> pos1 (catch over=true)
+  depth = pos1.length;
+  for(var d=depth-1;d>=0;d--){
+    pos1[d][movdim]+=movamt;
+//    debugout("try pos1 "+pos1.toString());
+      
+    //check outside -> over
+    if(pos1[d][movdim]<0 || pos1[d][movdim]>=unit){// outside
+      pos1[d][movdim]=(pos1[d][movdim]+unit)%unit;
+    }else{
+      return pos1;
+    }
+    //try next depth
+  }
+  return null;
+}
+
+enlarge = function(solver, pos){
+  var isempty=false;
+  for(d=0;d<pos.length;d++){
+    if(map[pos[d][1]][pos[d][0]]==0){//empty in depth d
+      isempty=true;
+      pos.splice(d+1);//delete over depth d
+      break;
+    }
+  }
+  return isempty;
+}
 /* recursively try enter pos1 by the direction (movdim, movamt). */
 rectry = function(solver, pos1, parent, movdim, movamt){
   if(pos1.length >= solver.depth) return;
@@ -216,6 +256,7 @@ rectry = function(solver, pos1, parent, movdim, movamt){
 
 
 Solver.prototype.evalcost = function(pcost, node){
+  return 0;
   /*
   var d = node.pos.length;
   return d + node.pos[d-1][1]/d;

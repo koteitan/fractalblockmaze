@@ -165,7 +165,7 @@ var reqinitsolver = 0;
 //initSolver: renew solver instance for the depth depth
 var initSolver = function(depth){
   world  = new World(unit, map);
-  solver = new Solver(world, depth);
+  solver = new Solver(world, depth, usersolverdepth);
   solverstarttime = gettime();
   solverstt = 0;
 }
