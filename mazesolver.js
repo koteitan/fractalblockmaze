@@ -256,7 +256,7 @@ rectry = function(solver, pos1, parent, movdim, movamt){
 
 
 Solver.prototype.evalcost = function(pcost, node){
-  return 0;
+  return node.pos.length;
   /*
   var d = node.pos.length;
   return d + node.pos[d-1][1]/d;
