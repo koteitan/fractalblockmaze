@@ -145,6 +145,7 @@ Solver.prototype.searchnext=function(){
             for(var dir2=0;dir2<4;dir2++){
               var movdim2 = movelist[dir2][0];
               var movamt2 = movelist[dir2][1];
+              if(movdim2==0 && movdim==0) continue; //refuse L<->R
               var innerpath = this.innerpath[movdim2][(movamt2+1)/2];
               if(innerpath > 0 && innerpath + depth < this.maxdepth){
                 var pos2    = move(solver, pos1, movdim2, movamt2);

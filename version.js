@@ -1,4 +1,4 @@
-document.getElementById("versiondisplay").innerHTML = "1.13b";
+document.getElementById("versiondisplay").innerHTML = "1.14b";
 document.getElementById("changelog").innerHTML = 
 "<table align='right'><tr>"+
 "<td style='text-align:right'></td><td>2022.09.10</td><td>solver solved original problem.</td></tr>"+
