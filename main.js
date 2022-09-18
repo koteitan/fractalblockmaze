@@ -32,7 +32,7 @@ window.onload = function(){
   setInterval(procAll, 1000/framerate); //enter gameloop
 }
 //game loop ------------------
-var framerate  = 10; //[fps]
+var framerate  =  3; //[fps]
 var solverwait =  2; //[ms]
 var trials     = 100;
 var lasttimedraw = 0;
@@ -50,7 +50,7 @@ var procAll=function(){
     var e = gettime();
     procSolver();
     solverelapse = gettime()-e;
-    trials = [333,[1,Math.floor(33/(solverelapse/trials))].max()].min();
+    trials = [1000,[1,Math.floor(100/(solverelapse/trials))].max()].min();
   }
   if(gettime()-lasttimedraw > 1000/framerate){
     reqdraw = true;
@@ -353,7 +353,7 @@ var drawUnit = function(d, x0, y0, len){
   for(var x=0;x<unit;x++){
     for(var y=0;y<unit;y++){
       if(map[y][x]){
-        if(d<drawdepth-1){
+        if(d<drawdepth-zoompos.length-1){
           //draw inner recursively
           drawUnit(d+1, x0+x*childlen, y0+y*childlen, childlen);
         }else{

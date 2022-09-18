@@ -139,8 +139,7 @@ Solver.prototype.searchnext=function(){
         this.addopenlist(node1);
       }else{
         //try 4 neighbour of the black
-        //try 4 neighbour of the black
-        if(!(movdim==1 && movamt==-1)){ // skip upper
+        if(!(movdim==1 && movamt==+1)){ // skip upper entrance
           if(this.innerpath[movdim][(movamt+1)/2]){ // entrance check
             for(var dir2=0;dir2<4;dir2++){
               var movdim2 = movelist[dir2][0];
