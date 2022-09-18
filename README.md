@@ -44,7 +44,7 @@ play here online:
     - when the solver reachs to the right-end in depth 1, it gets down<->right inner path.
   - cost function of openlist:
     - the depth of the cells are the costs of the cells. (the deeper depth is the larger costs)
-- v1.10:
+- v1.11:
   - path search algorithm:
     - search every white cells in 4-neighbor in [solver depth] depth and put them in the openlist.
   - cost function of openlist:
