@@ -19,14 +19,14 @@ play here online:
   - pink cells are the cells in a openlist (searching cells).
   - pale pink cells are the cells in a closelist (searched cells).
   - blue cells are the found solution path from start to goal.
-- operation:
+- operations:
   - left-click or drag on the generating pattern:
     - toggle the cell's color.
   - left-click on the maze:
     - zoom in one depth
   - right-click on the maze(or press zoom out button):
     - zoom out one depth
-- interface:
+- interfaces:
   - unit: the number of the parts an edge of the black cell has.
   - draw depth: the drawn depth.
   - solver depth: the maximum depth in that the solver searches the solution.
