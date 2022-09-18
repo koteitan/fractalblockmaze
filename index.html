@@ -35,29 +35,27 @@
     <td><input type=text id='unit' size=2 style="text-align:right"></td>
     <td><input type=button value=- onclick="javascript:onchangeunit(-1);"></td>
     <td><input type=button value=+ onclick="javascript:onchangeunit(+1);"></td>
+    <td></td>
   </tr>
   <tr>
     <td>draw depth:</td>
     <td><input type=text id='drawdepth' size=2 style="text-align:right"></td>
     <td><input type=button value=- onclick="javascript:onchangedrawdepth(-1);"></td>
     <td><input type=button value=+ onclick="javascript:onchangedrawdepth(+1);"></td>
+    <td><input type=button value="zoom out" onclick="javascript:zoomout();"></td>
   </tr>
   <tr>
     <td>solver depth:</td>
     <td><input type=text id='usersolverdepth'  size=2 style="text-align:right"></td>
     <td><input type=button value=- onclick="javascript:onchangeusersolverdepth(-1);"></td>
     <td><input type=button value=+ onclick="javascript:onchangeusersolverdepth(+1);"></td>
+    <td></td>
   </tr>
   <tr>
     <td>solver status:</td>
     <td><input type=text value='solving...' id='solverstt' size=20 style="text-align:left"></td>
     <td><input type=button value=pause onclick="javascript:onclickpause();"></td>
     <td><input type=button value=reset onclick="javascript:onclickreset();"></td>
-  </tr>
-  <tr>
-    <td>map no:</td>
-    <td><input type=text value='あ、ここまだです' id='mapno' readonly=readonly size=15 style="text-align:left"></td>
-    <td><input type=button value=load onclick="javascript:loadmap();"></td>
     <td></td>
   </tr>
 </table>

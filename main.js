@@ -19,7 +19,7 @@ window.onload = function(){
     [1,1,0,0]
   ];
   unit            = map.length;
-  drawdepth       = 4;
+  drawdepth       = 3;
   usersolverdepth = 5;
 //  usersolverdepth = 2;
   form0.unit.value        = unit;
@@ -32,7 +32,7 @@ window.onload = function(){
   setInterval(procAll, 1000/framerate); //enter gameloop
 }
 //game loop ------------------
-var framerate  =  3; //[fps]
+var framerate  = 10; //[fps]
 var solverwait =  2; //[ms]
 var trials     = 100;
 var lasttimedraw = 0;
@@ -50,7 +50,7 @@ var procAll=function(){
     var e = gettime();
     procSolver();
     solverelapse = gettime()-e;
-    trials = [1000,[1,Math.floor(100/(solverelapse/trials))].max()].min();
+    trials = [333,[1,Math.floor(33/(solverelapse/trials))].max()].min();
   }
   if(gettime()-lasttimedraw > 1000/framerate){
     reqdraw = true;
@@ -263,52 +263,86 @@ var procDraw = function(){
   //draw alllist
   for(var i=0;i<solver.alllist.length;i++){
     var body = solver.alllist[i];
+    var pos=body.pos;
+    var depth=pos.length;
+    if(depth>drawdepth) continue;
     var x1=x;
     var y1=y;
     var len=maplen;
-    var pos=body.pos;
-    var depth=pos.length;
+    var isdraw = true;
     for(var d=0;d<depth;d++){
-      len=len/unit;
-      x1 = x1+pos[d][0]*len;
-      y1 = y1+pos[d][1]*len;
+      if(d<zoompos.length){
+        if(zoompos[d][0]==pos[d][0] && zoompos[d][1]==pos[d][1]){
+        }else{
+          isdraw = false;
+          break;
+        }
+      }else{
+        len=len/unit;
+        x1 = x1+pos[d][0]*len;
+        y1 = y1+pos[d][1]*len;
+      }
     }
-    ctx.fillStyle="rgb(255,192,255)";
-    ctx.fillRect(x1, y1, len, len);
+    if(isdraw){
+      ctx.fillStyle="rgb(255,192,255)";
+      ctx.fillRect(x1, y1, len, len);
+    }
   }
   if(solverstt==1){
     //draw goalpath
     for(var i=solver.goalpath;i!=null;i=i.parent){
+      var pos=i.pos;
+      var depth=pos.length;
+      if(depth>drawdepth) continue;
       var x1=x;
       var y1=y;
       var len=maplen;
-      var pos=i.pos;
-      var depth=pos.length;
+      var isdraw = true;
       for(var d=0;d<depth;d++){
-        len=len/unit;
-        x1 = x1+pos[d][0]*len;
-        y1 = y1+pos[d][1]*len;
+        if(d<zoompos.length){
+          if(zoompos[d][0]==pos[d][0] && zoompos[d][1]==pos[d][1]){
+          }else{
+            isdraw = false;
+            break;
+          }
+        }else{
+          len=len/unit;
+          x1 = x1+pos[d][0]*len;
+          y1 = y1+pos[d][1]*len;
+        }
       }
-      ctx.fillStyle="rgb(64,64,255)";
-      ctx.fillRect(x1, y1, len, len);
-      a=1;
+      if(isdraw){
+        ctx.fillStyle="rgb(64,64,255)";
+        ctx.fillRect(x1, y1, len, len);
+      }
     }
   }else{
     //draw openlist
     for(var i=solver.openlist.top;i!=null;i=i.next){
+      var pos=i.body.pos;
+      var depth=pos.length;
+      if(depth>drawdepth) continue;
       var x1=x;
       var y1=y;
       var len=maplen;
-      var pos=i.body.pos;
-      var depth=pos.length;
+      var isdraw = true;
       for(var d=0;d<depth;d++){
-        len=len/unit;
-        x1 = x1+pos[d][0]*len;
-        y1 = y1+pos[d][1]*len;
+        if(d<zoompos.length){
+          if(zoompos[d][0]==pos[d][0] && zoompos[d][1]==pos[d][1]){
+          }else{
+            isdraw = false;
+            break;
+          }
+        }else{
+          len=len/unit;
+          x1 = x1+pos[d][0]*len;
+          y1 = y1+pos[d][1]*len;
+        }
       }
-      ctx.fillStyle="rgb(255,0,255)";
-      ctx.fillRect(x1, y1, len, len);
-      a=1;
+      if(isdraw){
+        ctx.fillStyle="rgb(255,0,255)";
+        ctx.fillRect(x1, y1, len, len);
+      }
     }
   }
 }
@@ -329,6 +363,13 @@ var drawUnit = function(d, x0, y0, len){
     }
   }
 }
+var zoompos=[];
+var zoomin = function(x, y){
+  zoompos.push([x,y]);
+}
+var zoomout = function(){
+  zoompos.pop();
+}
 //GUI event---------------------
 var lastpos=[-1,-1];
 var downpos=[-1,-1];// start of drag
@@ -338,27 +379,42 @@ var handleMouseDown = function(){
   var mx = Math.floor((mouseDownPos[0]-margin)/childlen);
   var my = Math.floor((mouseDownPos[1]-margin)/childlen);
 
-  if(mx>=unit||my>=unit||mx<0||my<0) return;
-
-  map[my][mx]^=1;
-  lastpos[0]=mx;
-  lastpos[1]=my;
-  reqdraw = true;
-  reqinitsolver = true;
+  if(mx<unit&&my<unit&&mx>=0&&my>=0){
+    map[my][mx]^=1;
+    lastpos[0]=mx;
+    lastpos[1]=my;
+    reqdraw = true;
+    reqinitsolver = true;
+  }
+  if(direction){//vertical
+    mx = Math.floor((mousePos[0]-margin                     )/childlen);
+    my = Math.floor((mousePos[1]-margin-maplen-margin-margin)/childlen);
+  }else{//horizontal
+    mx = Math.floor((mousePos[0]-margin-maplen-margin-margin)/childlen);
+    my = Math.floor((mousePos[1]-margin                     )/childlen);
+  }
+  if(mx<unit&&my<unit&&mx>=0&&my>=0){
+    if(mouseButton==0){
+      zoomin(mx,my);
+    }else{
+      zoomout();
+    }
+  }
 }
 var handleMouseDragging = function(){
   var childlen = maplen/unit;
   var mx = Math.floor((mousePos[0]-margin)/childlen);
   var my = Math.floor((mousePos[1]-margin)/childlen);
 
-  if(mx>=unit||my>=unit||mx<0||my<0) return;
-  if(lastpos[0]==mx && lastpos[1]==my) return;
-
-  map[my][mx]^=1;
-  lastpos[0]=mx;
-  lastpos[1]=my;
-  reqdraw = true;
-  reqinitsolver = true;
+  if(mx<unit&&my<unit&&mx>=0&&my>=0){
+    if(!(lastpos[0]==mx && lastpos[1]==my)){
+      map[my][mx]^=1;
+      lastpos[0]=mx;
+      lastpos[1]=my;
+      reqdraw = true;
+      reqinitsolver = true;
+    }
+  }
 }
 var handleMouseUp = function(){
 }

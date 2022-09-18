@@ -16,6 +16,7 @@ var isShiftKey = false;
 var mouseDownPos = [-1,-1];
 var mousePos     = [-1,-1];
 var mouseUpPos   = [-1,-1];
+var mouseButton  = -1;
 var isKeyTyping;
 //init
 var initEvent = function(can){
@@ -28,6 +29,7 @@ var initEvent = function(can){
   can.onmouseup    = addEvent;
   can.onmouseout   = addEvent;
   can.onmousewheel = addEvent;
+  can.oncontextmenu = function(e){e.preventDefault();}
 //  window.onkeydown       = addEvent;
 };
 // addEvent(Event e)
@@ -59,6 +61,7 @@ var procEvent = function(){
         mouseDownPos = removeClientOffset(e);
         mousePos     = mouseDownPos.clone();
         isShiftKey   = e.shiftKey;
+        mouseButton  = e.button;
         handleMouseDown();
         isDragging = true;
       break;
